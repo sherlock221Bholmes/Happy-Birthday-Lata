@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Happy Birthday Lata!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+/* A terminal stays dark in both themes on purpose. */
+:root{
+  --bg:#03120c; --fg:#8affc1; --dim:#3f8c65; --hot:#ff6fae; --warn:#ffd166; --ice:#9ad0ff;
+  --glow:rgba(138,255,193,.35);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#03120c; --fg:#8affc1; } }
+:root[data-theme="dark"]{ --bg:#03120c; --fg:#8affc1; }
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+body{
+  height:100%;margin:0;background:var(--bg);color:var(--fg);
+  font-family:"VT323","IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  font-size:22px;line-height:1.25;display:flex;flex-direction:column;overflow:hidden;
+}
+.crt{position:fixed;inset:0;pointer-events:none;z-index:5;
+  background:
+    repeating-linear-gradient(to bottom,rgba(0,0,0,.22) 0 1px,transparent 1px 3px),
+    radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%);}
+#term{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px 18px 8px;width:100%;max-width:860px;margin:0 auto;
+  text-shadow:0 0 6px var(--glow)}
+.ln{white-space:pre-wrap;word-break:break-word;min-height:1.25em}
+.dim{color:var(--dim)} .hot{color:var(--hot);text-shadow:0 0 8px rgba(255,111,174,.5)}
+.warn{color:var(--warn);text-shadow:0 0 8px rgba(255,209,102,.4)} .ice{color:var(--ice)}
+.ps{color:var(--dim)}
+.banner{font-size:clamp(44px,12vw,104px);line-height:.95;color:var(--hot);margin:14px 0 4px;
+  text-shadow:0 0 14px rgba(255,111,174,.6),2px 0 0 rgba(154,208,255,.35);letter-spacing:.02em}
+.banner.sub{font-size:clamp(32px,8vw,64px);color:var(--fg);text-shadow:0 0 10px var(--glow);margin-top:0}
+.flame{color:var(--warn);display:inline-block;animation:flick .35s infinite alternate}
+.flame:nth-child(2n){animation-delay:.15s}
+@keyframes flick{from{opacity:1;transform:translateY(0)}to{opacity:.55;transform:translateY(-2px)}}
+#inline{display:flex;gap:10px;align-items:baseline}
+#inline.hide{visibility:hidden}
+#cmd{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--fg);font:inherit;
+  caret-color:var(--fg);text-shadow:0 0 6px var(--glow);padding:0}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 14px;border-top:1px solid var(--dim);
+  width:100%;max-width:860px;margin:0 auto;scrollbar-width:none}
+.chips[hidden]{display:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;background:transparent;color:var(--fg);border:1px solid var(--dim);
+  font:inherit;font-size:21px;padding:2px 12px;cursor:pointer;text-shadow:0 0 6px var(--glow)}
+.chips button:hover{border-color:var(--fg)}
+.chips button:focus-visible,#cmd:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+.chips button:disabled{opacity:.4;cursor:default}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:4}
+@media (prefers-reduced-motion: reduce){.flame{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="crt" aria-hidden="true"></div>
+<main id="term" aria-live="polite">
+  <div id="out"></div>
+  <div id="inline" class="hide"><span class="ps" id="ps">password:</span><input id="cmd" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Terminal input"></div>
+</main>
+<nav class="chips" id="chips" hidden aria-label="Commands"></nav>
+
+<script>
+/* ============ EDIT THESE ============ */
+const CONFIG = {
+  name: "Lata Mishra",
+  from: "Shivam",
+  password: "birthday",                 // what she must type (not case-sensitive)
+  hint: "It's your BIRTHDAY. Come on. You got this!",  // shown after a wrong guess
+  memories: [
+    { when: "2018", text: "The year we first met and I knew you are special." },
+    { when: "2024", text: "You got your first job and I was the happiest person." },
+    { when: "2024", text: "I sent you flowers and that didn't end well, IYWIM ;)" }
+  ],
+  reasons: [
+    "She is the kindest person I know.",
+    "She likes to draw and she is preety good at it.",
+    "She's moody as hell. If you never had a fight with her, you are not a real friend.",
+    "Her eyes are the best part.",
+    "She is so confident about herself and never gives up."
+  ],
+  wish:
+`Another year of you being the person everyone is lucky to know.
+I hope this one brings you more laughs than bugs,
+more adventures than deadlines,
+and exactly the kind of happiness you keep handing out to everyone else.
+
+Happy birthday. Never change. (Okay, maybe your sleep schedule.)`,
+  gift: "I won't dare to gift you anything after what happened last time I did. So empty handed on this front."
+};
+/* ==================================== */
+
+const out=document.getElementById('out'), term=document.getElementById('term'),
+      inline=document.getElementById('inline'), cmd=document.getElementById('cmd'),
+      ps=document.getElementById('ps'), chips=document.getElementById('chips');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep=ms=>new Promise(r=>setTimeout(r,reduce?ms*.25:ms));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const scroll=()=>{term.scrollTop=term.scrollHeight};
+let stage='boot', busy=false, tries=0, cakeLit=false, hist=[], hi=0;
+
+function line(html,cls=''){const d=document.createElement('div');d.className='ln '+cls;d.innerHTML=html;out.appendChild(d);scroll();return d}
+async function type(text,cls='',speed=16){const d=line('',cls);for(const ch of text){d.textContent+=ch;scroll();await sleep(ch==='\n'?120:speed)}return d}
+async function bar(label){const d=line('','dim');for(let i=0;i<=12;i++){d.textContent=`${label} [${'#'.repeat(i)}${'.'.repeat(12-i)}] ${Math.round(i/12*100)}%`;await sleep(55)}}
+async function decrypt(text,cls){
+  const d=line('',cls);const g='!<>-_\\/[]{}=+*^?#01';
+  for(let f=0;f<=28;f++){
+    const n=Math.floor(text.length*f/28);
+    d.textContent=text.slice(0,n)+[...text.slice(n)].map(c=>c===' '?' ':g[Math.random()*g.length|0]).join('');
+    scroll();await sleep(45);
+  }
+  d.textContent=text;
+}
+function setBusy(b){busy=b;inline.classList.toggle('hide',b);chips.querySelectorAll('button').forEach(x=>x.disabled=b);if(!b){scroll();if(matchMedia('(pointer:fine)').matches)cmd.focus()}}
+
+async function boot(){
+  setBusy(true);
+  await type('> establishing secure link...','dim');
+  await bar('handshake');
+  await type(`> target located: ${CONFIG.name}`,'hot');
+  await type('> firewall detected. grade: birthday.','');
+  await bar('bypassing');
+  await type('! one layer left. this one is personal.','warn');
+  stage='auth';ps.textContent='password:';cmd.type='password';
+  setBusy(false);
+}
+
+async function auth(v){
+  line(`<span class="ps">password:</span> ${'*'.repeat(v.length)}`);
+  setBusy(true);
+  const ok=!CONFIG.password||v.trim().toLowerCase()===CONFIG.password.trim().toLowerCase();
+  if(ok) return grant();
+  tries++;
+  if(tries===1) await type('access denied. try again.','warn');
+  else if(tries===2) await type(`access denied. hint: ${CONFIG.hint}`,'warn');
+  else { await type('too many attempts. locking you out...','warn'); await sleep(700);
+         await type('just kidding. override granted. it\'s your birthday.','hot'); return grant(); }
+  setBusy(false);
+}
+
+async function grant(){
+  await type('ACCESS GRANTED','warn',30);
+  await bar('unpacking payload');
+  await decrypt('HAPPY BIRTHDAY','banner');
+  await decrypt(CONFIG.name,'banner sub');
+  party();
+  await sleep(300);
+  await type(`a gift from ${CONFIG.from}, built line by line.`,'dim');
+  await type('type help, or tap a command below.','');
+  stage='shell';ps.textContent='root@birthday:~$';cmd.type='text';
+  buildChips();setBusy(false);
+}
+
+const COMMANDS={
+  help:async()=>{line([
+    'wish      a message for you','memories  open memories.db','reasons   why you are awesome',
+    'cake      light the candles','blow      blow them out','party     launch confetti',
+    'gift      locate your gift','whoami    identify user','clear     clean the screen'].join('\n'))},
+  wish:async()=>{await type(`> decrypting message from ${CONFIG.from}...`,'dim');await type(CONFIG.wish,'',22);await type(`  - ${CONFIG.from}`,'hot')},
+  memories:async()=>{await type('> mounting memories.db','dim');await bar('reading');
+    for(const m of CONFIG.memories){await sleep(250);line(`<span class="ice">[${esc(m.when)}]</span> ${esc(m.text)}`)}
+    await type(`${CONFIG.memories.length} records found. storage remaining: unlimited.`,'dim')},
+  reasons:async()=>{await type('> cat reasons_you_are_awesome.txt','dim');
+    for(const [i,r] of CONFIG.reasons.entries()){await sleep(300);line(`${i+1}. ${esc(r)}`)}
+    await type('warning: file truncated. full list exceeds disk size.','warn')},
+  cake:async()=>{cakeLit=true;line(cakeArt(true));await type('candles lit. type blow when you\'ve made a wish.','dim')},
+  blow:async()=>{if(!cakeLit)return type('no candles found. try cake first.','warn');
+    cakeLit=false;line(cakeArt(false));party();await type('wish recorded. encrypted. nobody will ever know.','hot')},
+  party:async()=>{party();await type('confetti.exe running','hot')},
+  gift:async()=>{await type('> scanning for gift...','dim');await bar('triangulating');await type(CONFIG.gift,'warn')},
+  whoami:async()=>{await type(`${CONFIG.name}. root access, today and every day.`,'hot')},
+  sudo:async()=>{await type('permission denied: only the birthday girl has root today.','warn')},
+  exit:async()=>{await type('nice try. you are stuck here until you smile.','warn')},
+  date:async()=>{await type(`${new Date().toDateString()}  status: birthday mode`,'')},
+  clear:async()=>{out.innerHTML=''}
+};
+
+function cakeArt(lit){
+  const top=lit?'    '+Array(5).fill('<span class="flame">)</span>').join(' '):'<span class="dim">    ~ ~ ~ ~ ~</span>';
+  return `${top}
+    | | | | |
+ .--'-'-'-'-'--.
+ |  <span class="hot">h a p p y</span>   |
+ |~~~~~~~~~~~~~|
+ |  <span class="hot">b i r t h</span>   |
+ '-------------'`;
+}
+
+async function shell(v){
+  const c=v.trim();line(`<span class="ps">root@birthday:~$</span> ${esc(c)}`);
+  if(!c)return;hist.push(c);hi=hist.length;
+  const key=c.toLowerCase().split(/\s+/)[0];
+  setBusy(true);
+  if(COMMANDS[key]) await COMMANDS[key](c);
+  else await type(`command not found: ${c}. try help.`,'warn');
+  setBusy(false);
+}
+
+function buildChips(){
+  chips.innerHTML='';
+  ['wish','memories','reasons','cake','blow','party','gift','help'].forEach(k=>{
+    const b=document.createElement('button');b.textContent=k;
+    b.onclick=()=>{if(!busy)shell(k)};chips.appendChild(b);
+  });
+  chips.hidden=false;
+}
+
+cmd.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();if(busy)return;const v=cmd.value;cmd.value='';
+    stage==='auth'?auth(v):shell(v)}
+  else if(stage==='shell'&&e.key==='ArrowUp'&&hi>0){hi--;cmd.value=hist[hi];e.preventDefault()}
+  else if(stage==='shell'&&e.key==='ArrowDown'){hi=Math.min(hist.length,hi+1);cmd.value=hist[hi]||''}
+});
+term.addEventListener('click',()=>{if(!busy&&!getSelection().toString())cmd.focus()});
+
+/* confetti */
+const cv=document.getElementById('fx'),cx=cv.getContext('2d');let parts=[],raf=0;
+function size(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio;cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+addEventListener('resize',size);size();
+function party(){
+  if(reduce)return;
+  const cols=['#8affc1','#ff6fae','#ffd166','#9ad0ff'];
+  for(let i=0;i<160;i++)parts.push({x:innerWidth/2,y:innerHeight*.45,vx:(Math.random()-.5)*14,vy:Math.random()*-14-3,
+    s:Math.random()*6+3,c:cols[i%4],r:Math.random()*6,vr:(Math.random()-.5)*.3,life:140+Math.random()*60});
+  if(!raf)tick();
+}
+function tick(){
+  cx.clearRect(0,0,innerWidth,innerHeight);
+  parts=parts.filter(p=>p.life-->0&&p.y<innerHeight+20);
+  for(const p of parts){p.vy+=.32;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;
+    cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);cx.restore()}
+  raf=parts.length?requestAnimationFrame(tick):0;
+}
+
+boot();
+</script>
+</body>
+</html>
