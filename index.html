@@ -72,8 +72,8 @@ body{
 const CONFIG = {
   name: "Lata",
   from: "Shivam",
-  password: "birthday",                 // what she must type (not case-sensitive)
-  hint: "It's your BIRTHDAY. Come on. You got this!",  // shown after a wrong guess
+  password: "neurohealth",                 // what she must type (not case-sensitive)
+  hint: "My brain got hurting by how many times we discussed the title. Come on. You got this!",  // shown after a wrong guess
   memories: [
     { when: "2000", text: "The universe is larger than imagination but you chose Earth as your destination, humanity got lucky." },
     { when: "2018", text: "There are 50k+ colleges in India where one can graduate, but you chose the same college as all of us, God's plan or should I say, your plan." },
@@ -93,7 +93,7 @@ more adventures than deadlines,
 and exactly the kind of happiness you keep handing out to everyone else.
 
 Happy birthday. Never change. (Okay, maybe your sleep schedule.)`,
-  gift: "I won't dare to gift you anything after what happened last time I did. So empty handed on this front."
+  gift: "I know you don't like any gifts or gestures from me so this site is your gift! Clever, right?"
 };
 /* ==================================== */
 
@@ -127,7 +127,7 @@ async function boot(){
   await type(`> target located: ${CONFIG.name}`,'hot');
   await type('> firewall detected. grade: birthday.','');
   await bar('bypassing');
-  await type('! one layer left. this one is personal.','warn');
+  await type("! one layer left. this one is personal. What's the name of first website we created together?",'warn');
   stage='auth';ps.textContent='password:';cmd.type='password';
   setBusy(false);
 }
